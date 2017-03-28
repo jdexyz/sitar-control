@@ -1,0 +1,142 @@
+<h1 id="an-open-magnetic-scanner-design">An Open Magnetic Scanner : Design</h1>
+<h2 id="summary">Summary</h2>
+<p>To better undestand the magnetic field of our actuators, we built an open source magnetic scanner using off-the-shelf Hall effect and proximity sensors, and a CNC mill with custom parts. The scanner is autonomous and emits a webserver interface for controlling it wirelessly.</p>
+<h2 id="design-and-construction">Design and construction</h2>
+<h3 id="the-first-version">The first version</h3>
+<p>In 2014, we was given a <em>PrintrBot</em> 3D printer (a computer controlled machine that can move freely in a 3D space), on which we attached three Hall-effect sensors and an Arduino microcontroller for data logging. Hall-effect sensors produce a voltage proportional to the magnetic flux running through their surface; three small orthogonal sensors are enough to reconstruct the magnetic flux density vector <span class="math inline">\(\overrightarrow{B\,}\)</span> at a given point.</p>
+<p>The result of this modification was a surprisingly effective magnetic scanner, given the makeshift quality of the sensors assembly and the low resolution of the Arduino ADC.</p>
+<div class="figure">
+<img src="/img/IMG_0032(1).jpg" alt="The first version of the magnetic scanner" />
+<p class="caption">The first version of the magnetic scanner</p>
+</div>
+<div class="figure">
+<img src="/img/Capteur.svg" alt="The Hall-effect sensors assembly" />
+<p class="caption">The Hall-effect sensors assembly</p>
+</div>
+<p>A python script was written to control the printer and collect data from the Arduino.</p>
+<p>The printer would sweep a specified 3D area according to a precalculated grid. At each stop, the computer would ask the Arduino for new data, which it would store in a CSV file.</p>
+<p>The data was then processed in <em>Mathematica</em> (a math processing software similar to <em>Matlab</em>). This scanner was used in a project to see the effect shielding has on a common loudspeaker.</p>
+<p>These videos are some of the collected scans. The scanned object is a large speaker that can be seen on the next photo.</p>
+<video controls>
+<source src="media/SphinxMediumNoShieldX.mov" type="video/mov">
+<source src="media/SphinxMediumNoShieldX.mp4" type="video/mp4">
+<source src="media/SphinxMediumNoShieldX.webm" type="video/webm">
+</video>
+<video controls>
+<source src="media/SphinxMediumNoShieldY.mov" type="video/mov">
+<source src="media/SphinxMediumNoShieldY.mp4" type="video/mp4">
+<source src="media/SphinxMediumNoShieldY.webm" type="video/webm">
+</video>
+<video controls>
+<source src="media/SphinxMediumNoShieldZ.mov" type="video/mov">
+<source src="media/SphinxMediumNoShieldZ.mp4" type="video/mp4">
+<source src="media/SphinxMediumNoShieldZ.webm" type="video/webm">
+</video>
+<div class="figure">
+<img src="/img/IMG_0034.jpg" alt="The scanned loudspeaker" />
+<p class="caption">The scanned loudspeaker</p>
+</div>
+<p>To better vizualise the mapped magnetic fields, we wanted to add a 3D image of the scanned object.</p>
+<p>We added a rudimentary 3D scanner, using a tilted laser and a USB camera. The printer would sweep the surface of a plane while the camera feed was analysed by <code>OpenCV</code> to find the bright spot of the laser. The coordinates of the spot were mapped to height values using simple trigonometry and a 3D map was reconstructed. The results showed ressemblance to the scanned object but were too sensitive to changes in reflectivity of the surface of the object. Moreover, tilting the camera or the laser means a shadow exists in the resulting image.</p>
+<div class="figure">
+<img src="/img/Scan_Z-axis.png" alt="The height map scan of the scanned loudspeaker, with its shadow" />
+<p class="caption">The height map scan of the scanned loudspeaker, with its shadow</p>
+</div>
+<h2 id="the-new-version">The new version</h2>
+<p>In 2016, we acquired a desktop precision CNC mill, the <em>Nomad883</em> from <em>Carbide 3D</em>, which serves as a basis for the new version of the scanner.</p>
+<p>It uses a BeagleBoneGreen Wireless microcontroller, with a <code>TLV493D</code> 3D magnetic sensor from <em>Infineon</em>, and a <code>ST_VL6180</code> proximity sensor from <em>ST</em> for z-mapping.</p>
+<p>The proximity sensor is used to locate the object in the scanning area, and add a 3D map of the object to the magnetic field.</p>
+<p>The BeagleBone emits a local webserver (using <code>Flask</code> and <code>SocketIO</code>) that serves as an interface for controlling the scanner.</p>
+<p>The BeagleBone and both sensors are fixed onto a custom support part, with brass screws.</p>
+<div class="figure">
+<img src="/img/IMG_3382%20copy.JPG" alt="The new scanner, attached to the CNC mill" />
+<p class="caption">The new scanner, attached to the CNC mill</p>
+</div>
+<h4 id="mechanical-parts">Mechanical parts</h4>
+<p>We used a piece of Delrin polymer, a heavy, white opaque, very tough plastic that we found in the small shop of the school.</p>
+<p>The parts were machined using a 3.17mm carbide end mill using our CNC mill.</p>
+<p>The plans were inspired by a dust shoe design posted on the <a href="http://community.carbide3d.com/t/nomad-883-pro-dust-head/1418">forum of the machine</a>. The assembly is secured onto the spindle of the machine using a hose clamp. The magnetic sensor is held in a channel via a brass screw and a nut.</p>
+<p>The plans were drawn in <em>Illustrator</em>, since the proprietary software of the machine is more adapted to 2D plans in SVG format.</p>
+<p>Here is a quick video of the milling process :</p>
+<video controls>
+<source src="media/milling.mp4" type="video/mp4">
+<source src="media/milling.webm" type="video/webm">
+</video>
+<div class="figure">
+<img src="/img/scanner_photos-01.jpg" alt="The machined Delrin parts (without the new brass screws)" />
+<p class="caption">The machined Delrin parts (without the new brass screws)</p>
+</div>
+<h4 id="choosing-the-magnetic-sensor">Choosing the magnetic sensor</h4>
+<p>Several multi-axis magnetic sensors are available on the electronics market. Our choice was a compromise of</p>
+<ul>
+<li><p><strong>Magnetic range</strong> : The sensor must not saturate in the relatively high intensity fields of neodymium magnets</p></li>
+<li><p><strong>Orthogonality</strong> : The sensor must either consist of two identical 2D Hall-effect sensors or one 3D sensor (the latter being prefered)</p></li>
+<li><p><strong>Price</strong> : The sensor must be in the sub-100€ price range</p></li>
+<li><p><strong>Ease of use</strong> : An evaluation board is prefered, as it allows for rapid prototyping.</p></li>
+</ul>
+<p>​</p>
+<blockquote>
+<p>For reference, here is a list of suitable candidates for a magnetic scanner :</p>
+<ul>
+<li>The <a href="http://www.asensor.eu/productdata/Datasheet-HE444X.pdf"><code>HE444</code></a> from <em>ASensor</em>, remarquable for magnetometers but expensive</li>
+<li>The <a href="https://www.micronas.com/en/products/direct-angle-sensors/hal-37xy"><code>HAL37xy</code></a> series from <em>Micronas</em> which are 2D sensors</li>
+<li>The <a href="http://ams.com/eng/Products/Magnetic-Position-Sensors/Linear-Position/AS5403"><code>AS5403</code></a> sensors from <em>AMS</em>, which are arvertised as 2D sensors, but the datasheet seems to obscurely imply that only 2D measurements can be made.</li>
+<li><strong>The <a href="http://www.infineon.com/dgdl/Infineon-TLV493D-A1B6-DS-v01_00-EN.pdf?fileId=5546d462525dbac40152a6b85c760e80"><code>TLV493D</code></a> from <em>Infineon</em>, which we used for this project (details below)</strong></li>
+<li><strong>The <a href="https://www.melexis.com/en/products/sense/position-sensors"><code>MLX903xx</code></a> series from <em>Melexis</em>, excellent for magnetometers, reasonably priced and with extensive programmable features</strong></li>
+</ul>
+</blockquote>
+<p>The <code>TLV493D</code> is used for now, as the <a href="http://www.mouser.fr/new/Infineon-Technologies/infineon-tlv493d-a1b6-2-go-kit/">evaluation board</a> was fast to work with and was already in the right shape for a probe application. Other sensors from <em>Melexis</em> (the <code>MLX90363</code> and <code>MLX90393</code>) were also ordered for a future upgrade of this scanner (custom PCBs are required as all these sensors are surface mount components).</p>
+<p>The <code>TLV493D</code> is an integrated, 12-bit resolution 3D Hall-effect sensor with temperature compensation. It communicates via <code>I2C</code> and measures fields up to <span class="math inline">\(\pm 130\text{mT}\)</span>. We used the evaluation board that has accessible pins. The on-board microcontroller was first used to validate that the absolute range of the sensor was suitable for our magnets. We then disconnected the sensor pins and soldered headers to connect the BeagleBone.</p>
+<div class="figure">
+<img src="/img/mag_sensor.jpg" alt="The slightly modified evaluation board for the TLV493D magnetic sensor" />
+<p class="caption">The slightly modified evaluation board for the <code>TLV493D</code> magnetic sensor</p>
+</div>
+<h4 id="choosing-the-proximity-sensor">Choosing the proximity sensor</h4>
+<p>The first version of the scanner used a laser and a camera, with mixed results. Our goal was to have a more reliable way to estimate the vertical distance between the sensor and the object. Unfortunately, few sensors met our requirements of working distance (between 5cm and 15cm), of precision (better than 1mm), and of robustness (no dependance on the object reflectivity). <a href="http://www.maxbotix.com/documents/HRLV-MaxSonar-EZ_Datasheet.pdf">Some ultrasonic sensors</a> exhibit precisions of 1mm, but the minimum distance is often too great.</p>
+<p>These constraints lead us to choose the <a href="http://www.st.com/content/ccc/resource/technical/document/datasheet/c4/11/28/86/e6/26/44/b3/DM00112632.pdf/files/DM00112632.pdf/jcr:content/translations/en.DM00112632.pdf"><code>ST_VL6180</code></a> time-of-flight sensor from <em>Texas Instrument</em>. It uses a small LED that emits a wave of light and a receiver that measures the time taken to see the reflection of the pulse. The sensor is compensated for changes in ambient brightness and in surface reflectivity. Like the <code>TLV493D</code> magnetic sensor, it communicates via <code>I2C</code>.</p>
+<p>Precision and accuracy are only lightly documented in the datasheet, and we found them both dissatisfying : in best conditions (no light, flat orthogonal surface), the standard deviation of the measurements was around 1.2mm, and the average over 100 measurements would vary by as much as 1mm during testing (tested on aluminium and cardboard sufaces at a 100mm distance). This sensor is therefore not suitable for its original purpose (producing decent quality 3D images), but can be helpful for checking that the magnetic sensor will not hit an object.</p>
+<h4 id="issues-with-i2c-communication">Issues with <code>I2C</code> communication</h4>
+<p><em>This section is rather technical, and mainly here for reference. Again, we added a glossary at the end of this page.</em></p>
+<blockquote>
+<p>To first get familiar with the sensors, we tried Arduino scripts that implemented the specifications of the datasheet : from a dedicated Arduino <a href="http://forum.arduino.cc/index.php?topic=419380.0">forum thread</a> for the TLV493D and from <a href="https://github.com/pololu/vl6180x-arduino/blob/master/examples/InterleavedContinuous/InterleavedContinuous.ino">the pololu library</a> for the ST_VL6180.</p>
+<p>The Arduino scripts for the magnetic sensor had to be modified to avoid errors in readouts. The working code was then published on the forum thread.</p>
+<p>We now had to translate the scripts into Python, so that both communication and computation would be handled by the same script. We used the <a href="https://github.com/intel-iot-devkit/mraa"><code>libmraa</code></a> low level library for <code>I2C</code> communication. It consists of C/C++ low level binaries with high level Python/JS/Java bindings.</p>
+<p>A critical part of the Arduino script for the magnetic sensor is the readout of all the available registers of the chip in a single call. However a bug in the Python bindings of <code>libmraa</code> prevented to read several bytes at once. We detected this issue using a USB logic analyser. We fixed the generated Python bindings file and filed an <a href="https://github.com/intel-iot-devkit/mraa/issues/660">issue</a> on the GitHub repo.</p>
+</blockquote>
+<h4 id="a-small-webserver">A small webserver</h4>
+<p>The scanner is autonomous, but can be controlled via a webpage accessible on the local network (the BeagleBone Wireless has to be configured to connect to the local network). The webserver uses the <code>Flask</code> micro-server environment, a simple to use framework written in Python. A <code>SocketIO</code> realtime connection is established with the client and a webpage displays the graphs of the incoming data (magnetic and distance outputs, but also the machine state) in realtime.</p>
+<div class="figure">
+<img src="/img/mag_server.png" alt="The webpage of the server emitted by the BeagleBone" />
+<p class="caption">The webpage of the server emitted by the BeagleBone</p>
+</div>
+<h4 id="a-simple-3d-vector-field-viewer-for-web-browsers">A simple 3D Vector field viewer for web browsers</h4>
+<p>Using the <a href="http://plot.ly/"><code>plotly</code></a> javascript library, we wrote a simple 3D vector field viewer that can interactively display a prerecorded 3D magnetic field. The inspiration for this script came from <a href="https://plot.ly/~Ryan.Budney/181/vector-field-around-a-conducting-32-torus-knot/">this example</a> by Ryan Budney.</p>
+<blockquote>
+<p>The viewer creates a large array of 3D lines and adds a black point at the end. This being a (slightly) abusive use of the library, the startup is usually very slow for large input files (about 20s on a recent laptop for 5000 vectors).</p>
+</blockquote>
+<div class="figure">
+<img src="/img/mag_viewer.png" alt="A screenshot of the 3D viewer introduced above" />
+<p class="caption">A screenshot of the 3D viewer introduced above</p>
+</div>
+<h2 id="other-similar-magnetic-scanners">Other similar magnetic scanners</h2>
+<h3 id="sensis">Sensis</h3>
+<p>The Swiss company Sensis has been developed various high accuracy magnetic field mappers, all detailed on <a href="http://www.senis.ch/products/mappers">their website</a>. Their mappers target industrial laboratories, with machines starting from €20,000.</p>
+<h3 id="ted-yapo">Ted Yapo</h3>
+<p><a href="https://hackaday.io/ted.yapo">Ted Yapo</a> has also been working on modifying his 3D printer to map magnetic fields, posting his results on <a href="https://hackaday.io/project/11865-3d-magnetic-field-scanner#menu-description">the Hackaday platform</a>. His current sensor, the <code>MLX90393</code>, represents a direction we wish to explore in future work, as the sensor has impressive measurement capabilities. His magnetic field lines viewer is also very effective, leveraging WebGL to get very smooth animations with little CPU overhead.</p>
+<h2 id="future-work-on-this-design">Future work on this design</h2>
+<ul>
+<li>Since the Time-Of-Flight sensor was ineffective at producing a good quality 3D images, we believe that going back to the tilted laser system is the best solution. To overcome the issue of the shadow (due to the tilted angle), we could use two opposing lasers. The scanner would scan the area in two passes, having only one active laser. A <a href="http://www.radiumboards.com/HD_Camera_Cape_for_BeagleBone_Black.php">camera cape</a> exists for the BeagleBone Black, featuring 720p resolution at 30fps and direct memory access, which seems appropriate for this design.</li>
+<li>The current scanning process is still slow, and we believe we can speed up the <code>I2C</code> significantly by reducing the networking overload. The sensor being theoretically capable of transmitting data at 1kHz/sample, we could try to map low frequency AC fields with an optimized setup. We also wish to test the <code>MLX90393</code> sensor with a custom PCB, adapted to probing applications.</li>
+<li>Finally, the web browser viewer is still very experimental and not optimized. We wish to examine the method used by Ted Yapo for <a href="http://zednaughtlabs.com/magview_full.html">his own viewer</a>.</li>
+</ul>
+<h2 id="glossary">Glossary</h2>
+<ul>
+<li><strong><code>I2C</code></strong> : A communication protocol which allows multiple devices send and request data, with one master and several slaves.</li>
+<li><strong><code>Arduino</code></strong> : A small microcontroller that has a strong community support and is easy to program</li>
+<li><strong><code>BeagleBone</code></strong> : An embedded linux computer with extensive communication features. Much more powerfull than a standard <code>Arduino</code> board.</li>
+<li><strong><code>WebSocket</code> and <code>SocketIO</code></strong> : <code>WebSocket</code> is a communication protocol that enables realtime transmission of data, without repeted <code>HTTP</code> calls. <code>SocketIO</code> is a popular library that simplifies the establishment of such connections.</li>
+</ul>
+<h2 id="code-repository">Code Repository</h2>
+<p>The code for this project is available on the GitHub repository, in the <code>/magnetic_scanner</code> folder.</p>
+<h2 id="results">Results</h2>
+<p>The <a href="/magnetic_scanner_results">next page</a> shows scans made with the current version of the scanner.</p>

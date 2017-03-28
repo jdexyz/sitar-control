@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="js/plotly.min.js"></script>
+	<script src="js/vue.min.js"></script>
+	<script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/socket.io.min.js"></script>
+	<script src="js/jwerty.js"></script>
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+  <title>The OpenMagneticScanner !</title>
+
+</head>
+<body>
+<div id="vue" class="container">
+      <div class="header clearfix">
+        <nav>
+          <ul class="nav nav-pills pull-right">
+            <li role="presentation"><a href="#">GitHub</a></li>
+            <li role="presentation"><a href="#">Trublion</a></li>
+          </ul>
+        </nav>
+        <h3 class="text-muted">The Open Magnetic Scanner v0.4</h3>
+      </div>
+
+
+      <div class="jumbotron">
+        <h1>Welcome !</h1>
+        <p class="lead">This is the server page of the Open Magnetic Scanner by Trublion</p>
+      </div>
+      <div id="machine" class="row">
+          <h1>General Controls</h1>
+          <div id="HomeStopButtons">
+            <button type="button" class="btn btn-danger btn-lg">
+              <span class="glyphicon glyphicon-minus-sign" aria-hidden="true"></span> STOP
+            </button>
+            <button type="button" class="btn btn-info btn-lg">
+              <span class="glyphicon glyphicon-home" aria-hidden="true"></span> HOME
+            </button>
+          </div>
+          <br>
+            <div class="panel panel-default">
+              <div class="panel-heading">Machine Status</div>
+              <table class="table">
+                  <thead>
+                      <tr>
+                          <th>State</th>
+                          <th>X</th>
+                          <th>Y</th>
+                          <th>Z</th>
+                          <th>Speed</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr>
+                          <td>{{machine.state}}</td>
+                          <td>{{machine.x}}</td>
+                          <td>{{machine.y}}</td>
+                          <td>{{machine.z}}</td>
+                          <td>{{machine.speed}}</td>
+                      </tr>
+                  </tbody>
+              </table>
+            <div class="col-sm-12">
+              <strong>Status</strong> : {{machine.status}}
+              <br>
+              {{machine.message}}
+              <br>
+            </div>
+          </div>
+          
+            <div >
+              <h3>Go to positon</h3>
+              <div class="col-sm-3">
+                <button type="button" class="btn btn-info" id="copyCurrentPosition">
+                Copy current position
+              </button>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">X</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="goTo.x">
+                </div>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Y</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="goTo.y">
+                </div>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Z</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="goTo.z">
+                </div>
+              </div>
+              <div class="col-sm-2">
+                <button type="button" class="btn btn-success" id="goToPosition">
+                <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Go !
+              </button>
+              </div>
+                <br>
+                <br>
+              </div>
+            
+      </div>
+
+      <div id="zScan" class="row">
+          <h1>ZScan</h1>
+          <h2>Controls</h2>
+          <div class="row">
+            <div class="col-sm-6">
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Xmin</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="zScan.xmin">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Xmax</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="zScan.xmax">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">dx</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="zScan.dx">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Ymin</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="zScan.ymin">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Ymax</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="zScan.ymax">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">dy</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="zScan.dy">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Z</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="zScan.z">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-4">
+                <button type="button" class="btn btn-success" id="launchZScanButton">
+                <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch a new ZScan !
+              </button>
+              </div>
+              <div class="col-sm-12">
+              <strong>Status</strong> : {{zScanInfo.status}}
+              <br>
+              {{zScanInfo.message}}
+              <br>
+                <div class="progress">
+                  <div id="zScanInfoProgress" class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">
+                    {{zScanInfo.progress}}%
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <canvas id="zScanSelect" width=400 height=400></canvas>
+            </div>
+          </div>
+          <br>
+          <h2>ZScan HeatMap</h2>
+          <div id="zScanHeatMapDiv" class="col-lg-12"></div>
+          <h2>3D Surface</h2>
+          <div id="zScanSurfaceDiv" class="col-lg-12"></div>
+      </div>
+      <div id="magScan" class="row">
+          <h1>Mag Scan</h1>
+          <h2>Mag Scan Controls</h2>
+          <div class="row">
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Xmin</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.xmin">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Xmax</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.xmax">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">dx</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.dx">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Ymin</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.ymin">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Ymax</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.ymax">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">dy</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.dy">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Zmin</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.zmin">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">Zmax</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.zmax">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <div class="input-group">
+                  <span class="input-group-addon" id="sizing-addon1">dz</span>
+                  <input type="text" class="form-control" placeholder="" aria-describedby="sizing-addon1" v-model="magScan.dz">
+                </div>
+                <br>
+                <br>
+              </div>
+              <div class="col-sm-2">
+                <button type="button" class="btn btn-success" id="launchMagScanButton">
+                <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch a new Mag Scan !
+              </button>
+              </div>
+            </div>
+                <div class="progress">
+                  <div id="magScanInfoProgress" class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100">
+                    {{magScanInfo.progress}}%
+                  </div>
+                </div>
+              <div class="col-sm-12">
+              <strong>Status</strong> : {{magScanInfo.status}}
+              <br>
+              {{magScanInfo.message}}
+              <br>
+            </div>
+          <h2>HeatMap</h2>
+          <div id="magScanHeatMapDiv" class="col-lg-12"></div>
+          <h2>3D Surface</h2>
+          <div id="magScanSurfaceDiv" class="col-lg-12"></div>
+      </div>
+
+    </div> <!-- /container -->
+
+	<script>
+
+
+function transformToZList(points){
+  var z = [[]];
+  var x = [];
+  var y = [];
+  points = points.sort(compareFunction);
+  var i = 0;
+  var j = 0;
+  var firstRow = true;
+  while(i<points.length){
+    var x_temp = points[i][0];
+    x.push(x_temp);  
+    while(points[i] && points[i][0]==x_temp){
+      if(firstRow){y.push(points[i][1])}
+      z[j].push(points[i][2]);
+      i++;
+    }
+    firstRow=false;
+    z.push([]);
+    j++;
+  }
+  return {x: x, y:y, z:z, type:"surface"};
+}
+
+function compareFunction(a,b){
+  return a[0]==b[0] ? a[1]-b[1] : a[0]-b[0]; // Compares [x,y] and [x2,y2], alphabetically.
+}
+
+  
+  // console.log(transformToZList(data));
+  //  Plotly.newPlot('myDiv', transformToZList(data));
+
+
+// console.log(data)
+
+// var url = "Z_Scan_29-10-16_11-14.csv"
+// var url = "B_debug.csv"
+// var data;
+
+// var zList;
+
+// jQuery.get(url).then(function(csv){
+//   lines = csv.split("\n");
+//   var xData = [];
+//   var yData = [];
+//   var zData = [];
+//   var points = [];
+//   for(var i = 0; i<lines.length - 4; i++){
+//     if(lines[i+4].length>0){
+//       line = lines[i+4].split(",");
+//       xData.push(parseFloat(line[0]));
+//       yData.push(parseFloat(line[1]));
+//       zData.push(parseFloat(line[2]));
+//       points.push([parseFloat(line[0]),parseFloat(line[1]),parseFloat(line[2])]);
+//     }
+//   }
+//    //data = [{ y:yData, x : xData, z:zData, "type": 'heatmap'}];
+//   //data = [{ y:yData, x : xData, z:zData, "type": 'surface'}];
+
+//   //console.log(data);
+//   // console.log(points);
+//   //Plotly.newPlot('myDiv', data);
+
+//   //zList = transformToZList(points);
+//   //console.log(zList);
+   
+//    //Plotly.newPlot('myDiv', [zList]);
+   
+
+//    // Plotly.newPlot('myDiv2', [{ y:yData, x : xData, z:zData, "type": 'heatmap'}]);
+// var layout = {
+//   xaxis: {range: [75, 110]},
+//   yaxis: {range: [30, 70]}
+// };
+
+//    Plotly.newPlot('zScanHeatMapDiv', [{ y:yData, x : xData, z:zData, "type": 'heatmap', zmin : 10, zmax : 80, colorscale: 'Hot'}], layout);
+//    //Plotly.newPlot('zScanHeatMapDiv', [{ y:[], x : [], z:[], "type": 'heatmap', zmin : 50, zmax : 80, colorscale: 'Hot'}], layout);
+
+
+//     function addNewPoint(i){
+//          Plotly.extendTraces('zScanHeatMapDiv', {
+//           z: [[points[i][2]]],
+//           x : [[points[i][0]]],
+//           y : [[points[i][1]]]
+//             }, [0]);
+//     }
+//     addNewPoint(0);
+// }) 
+
+machineStepIndex = 0
+MACHINE_STEPS = [0.5,1,5,10,20,50]
+SPEEDS = [400,400, 400, 800, 2000, 4000]
+
+var zScan = {
+      xmin  : 0,
+      xmax  : 0,
+      dx  : 0,
+      ymin  : 0,
+      ymax  : 0,
+      dy  : 0,
+      z   : 0
+    };
+
+
+var magScan = {
+      xmin  : 0,
+      xmax  : 0,
+      dx  : 0,
+      ymin  : 0,
+      ymax  : 0,
+      dy  : 0,
+      zmin   : 0,
+      zmax : 0,
+      dz :0,
+    };
+    
+var goTo = {
+  x : 0,
+  y : 0,
+  z : 0
+}
+
+var demo = new Vue({
+
+  el: '#vue',
+
+  data: {
+    machine : {
+      state : "Unknown",
+      x : 0,
+      y : 0,
+      z : 0,
+      speed : 0,
+      status : "Unknown",
+      message : ""
+    },
+    zScan : zScan,
+    goTo : goTo,
+    zScanInfo : {
+      status : "Not Started",
+      message : "",
+      progress : 0
+      },
+    magScanInfo : {
+      status : "Not Started",
+      message : "",
+      progress : 0
+      }
+  },
+   watch: {
+      "zScan.xmin" : redraw,
+      "zScan.xmax" : redraw,
+      "zScan.ymin" : redraw,
+      "zScan.ymax" : redraw,
+      "zScanInfo.progress" : function(val){
+        $("#zScanInfoProgress").css("width", 100*val + "%");
+      },
+      "magScanInfo.progress" : function(val){
+        $("#magScanInfoProgress").css("width", 100*val + "%");
+      }
+  }
+
+});
+
+function goToIncrementedPosition(direction, dontConfirmPosition){ // 0 for +X, 1 for -X, 2 for +Y, 3 for -Y, 4 for +Z, 5 for -Z.
+  dontConfirmPosition = true; //For now.
+  speed = SPEEDS[machineStepIndex];
+  if(dontConfirmPosition){
+    var X = demo.$data.machine.x;
+    var Y = demo.$data.machine.y;
+    var Z = demo.$data.machine.z;
+    switch(direction){
+      case 0:
+        X += MACHINE_STEPS[machineStepIndex];
+        break;
+      case 1:
+        X -= MACHINE_STEPS[machineStepIndex];
+        break;
+      case 2:
+        Y += MACHINE_STEPS[machineStepIndex];
+        break;
+      case 3:
+        Y -= MACHINE_STEPS[machineStepIndex];
+        break;
+      case 4:
+        Z += MACHINE_STEPS[machineStepIndex];
+        break;
+      case 5:
+        Z -= MACHINE_STEPS[machineStepIndex];
+        break;
+    }
+    socket.emit("machinePositionInstructions", {  x : X, y : Y, z : Z, speed : speed});
+  }
+}
+
+function changeMachineStepIndex(){
+
+}
+
+    var canvas;
+    var ctx;
+
+$(document).ready(function(){
+
+    var canvasOffset;
+    var offsetX;
+    var offsetY;
+
+    var isDrawing = false;
+
+
+  canvas = document.getElementById("zScanSelect");
+  ctx = canvas.getContext("2d");
+  canvasOffset = $("#zScanSelect").offset();
+
+
+    $("#zScanSelect").on('mousedown', function (e) {
+        handleMouseDown(e);
+    }).on('mouseup', function(e) {
+        handleMouseUp();
+    }).on('mousemove', function(e) {
+        handleMouseMove(e);
+    });
+
+
+    var startX;
+    var startY;
+
+    function handleMouseUp() {
+      isDrawing = false;
+      canvas.style.cursor = "default";  
+    }
+
+    function handleMouseMove(e) {
+      if (isDrawing) {
+        var mouseX = parseInt(e.offsetX);
+        var mouseY = parseInt(e.offsetY);       
+        zScan.xmin = Math.min(startX, mouseX);
+        zScan.xmax = Math.max(startX, mouseX);
+        zScan.ymin = Math.min(startY, mouseY);
+        zScan.ymax = Math.max(startY, mouseY);
+        redraw();
+      }
+    }
+
+    function handleMouseDown(e) {
+      canvas.style.cursor = "crosshair";    
+      isDrawing = true;
+      startX = parseInt(e.offsetX);
+      startY = parseInt(e.offsetY);
+    }
+
+});
+
+
+function redraw(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.rect(zScan.xmin, zScan.ymin, zScan.xmax-zScan.xmin,zScan.ymax - zScan.ymin);
+    ctx.stroke();
+}
+
+
+var socket = io();
+
+  $('#launchZScanButton').click(function(){
+    socket.emit('zScanInstructions', zScan);
+  });
+
+  $('#launchMagScanButton').click(function(){
+    socket.emit('magScanInstructions', magScan);
+  });
+  
+  $('#goToPosition').click(function(){
+    socket.emit("machinePositionInstructions", {  x : goTo.x, y : goTo.y, z : goTo.z, speed : 2000});
+  });
+
+  $('#copyCurrentPosition').click(function(){
+    demo.$data.goTo = {x : demo.$data.machine.x, y : demo.$data.machine.y , z : demo.$data.machine.z};
+  });
+
+  socket.on('zScanInfo', function(obj){
+    console.log("zScanInfo");
+    console.log(obj);
+    demo.$data.zScanInfo.status = obj.status;
+    if(obj.progress){
+      demo.$data.zScanInfo.progress = obj.progress;
+    }
+    if(obj.message){
+      demo.$data.zScanInfo.message = obj.message;
+    }
+  });
+  socket.on('zScanData', function(obj){
+    console.log("zScanData");
+    console.log(obj);
+         Plotly.extendTraces('zScanHeatMapDiv', {
+          z : [obj.z],
+          x : [obj.x],
+          y : [obj.y]
+            }, [0]);
+  });
+
+  socket.on('magScanInfo', function(obj){
+    console.log("magScanInfo");
+    console.log(obj);
+    demo.$data.magScanInfo.status = obj.status;
+    if(obj.progress){
+      demo.$data.magScanInfo.progress = 100*obj.progress;
+    }
+    if(obj.message){
+      demo.$data.magScanInfo.message = obj.message;
+    }
+  });
+  socket.on('magScanData', function(obj){
+    console.log("magScanData");
+    console.log(obj);
+  });
+
+  socket.on('machineInfo', function(obj){
+    console.log("machineInfo");
+    console.log(obj);
+    if(obj.status != "Error"){
+      demo.$data.machine = {
+        state : obj.State,
+        x : Math.round(100*obj.RelativePosition[0])/100,
+        y : Math.round(100*obj.RelativePosition[1])/100,
+        z : Math.round(100*obj.RelativePosition[2])/100,
+        speed : obj.Speed
+      }; 
+    }
+    else{
+      demo.$data.machine.status = obj.status;
+      demo.$data.machine.message = obj.message;
+    }
+  });
+
+
+  socket.on('ping', function(obj, obj2){
+    console.log("pong");
+  });
+
+  jwerty.key("→",function(){goToIncrementedPosition(0)});
+  jwerty.key("←",function(){goToIncrementedPosition(1)});
+  jwerty.key("↑",function(){goToIncrementedPosition(2)});
+  jwerty.key("↓",function(){goToIncrementedPosition(3)});
+  jwerty.key("page-up",function(){goToIncrementedPosition(4)});
+  jwerty.key("page-down",function(){goToIncrementedPosition(5)});
+  jwerty.key("r",function(){machineStepIndex = Math.min(machineStepIndex+1,5)});
+  jwerty.key("l",function(){machineStepIndex = Math.max(machineStepIndex-1, 0)});
+
+
+socket.emit("machineStateRequest");
+
+setInterval(function(){
+  socket.emit("machineStateRequest");
+}, 10000);
+// socket.emit("machinePositionInstructions", {  x : 200, y : 204, z : 190});
+
+
+//socket.emit("magScanInstructions", {  xmin : 90, xmax : 122, ymin : 92, ymax : 124, dx : 1, dy: 1, zmin : 1, zmax :  10, dz : 1});
+//socket.emit("machinePositionInstructions", {  x : 100, y : 104, z : 60, speed : 400});
+//socket.emit("magScanInstructions", {  xmin : 100, xmax : 112, ymin : 102, ymax : 114, dx : 1, dy: 1, zmin : 1, zmax :  20, dz : 1});
+// socket.emit("magScanInstructions", {  xmin : 103, xmax : 109, ymin : 105, ymax : 111, dx : 1, dy: 1, zmin : 1, zmax :  40, dz : 0.2});
+
+
+
+	</script>
+</body>
+</html>

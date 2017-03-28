@@ -1,0 +1,14 @@
+{
+  "name": "rapport_web",
+  "version": "0.1.0",
+  "description": "The report for my research internship at CAS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jeremy Dahan",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.15.2"
+  }
+}

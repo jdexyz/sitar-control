@@ -1,0 +1,98 @@
+<h1 id="the-actuator">The actuator</h1>
+<p>Using electro-magnets for driving strings in musical instrument si not new, dating back to 1886 when Eisenmann@^van2017between built a piano sustainer using such magnets.</p>
+<p>Many other augmented instruments have used the electromagnet to induce or control vibrations in strings or other magnetic objects : the Electromagnetically Prepared Piano@^Berdahl2005, the Magnetic Resonator Piano@^McPherson2010 or the EMvibe@^Britt2012, the <a href="http://www.paulvo.com/vo-96/">Vo-96</a> ; numerous electric guitar sustainers exist on the market, including the E-Bow@^heet1978hand and the <a href="http://www.paulvo.com/wond/">Wond</a>.</p>
+<p>The decision to use this type of actuators was a defining choice for the instrument, made before the research actually began.</p>
+<h3 id="general-principle">General principle</h3>
+<p>The physics of this type of actuators is ruled by the Maxwell equations in matter, the response curves of ferromagnetic materials and Faraday's law (which are consequences of Maxwell equations). A typical electro-magnet consists of a coil of copper wire insulated by a thin coat of resin. In the middle of the coil is usually an iron cylindrical core which can guide the magnetic field when a current is injected in the coil. Injecting a current in the coil creates a magnetic field which magnetises the ferromagnetic string above it. The string, having now a magnetic moment, experiences a force due to the magnetic field gradient, pulling it towards the electromagnet.</p>
+<p>The shape of the electromagnet is dictated by the desired number of wire turns <span class="math inline">\(N\)</span> in the coil, the thickness of the wire and the diameter or height of the assembly. Increasing the thickness of the wire decreases linear resistance and makes the coil less sensitive to insulation melting failure; at constant volume, <span class="math inline">\(N\)</span> is of course reduced, decreasing the DC field intensity.</p>
+<p>A. McPherson provides a very convenient guide@^McPherson2012 for choosing the right electro-magnet for augmented instruments, using his Magnetic Resonator Piano as a reference.</p>
+<h3 id="a-first-optimization">A first optimization</h3>
+<p>Let <span class="math inline">\(d_{out}\)</span> , <span class="math inline">\(d_{in}\)</span>,<span class="math inline">\(h\)</span>, <span class="math inline">\(d_{wire}\)</span>, <span class="math inline">\(\rho\)</span> be respectively the outside diameter of the coil, the inside diameter of the coil, the height of the coil, the diameter of the wire and its resistivity (we will neglect the extra thickness due to the insulation around the wire).</p>
+<p>As pointed by McPherson, we need to have a high <span class="math inline">\(NI\)</span> product to get a high intensity field.</p>
+<p>Our constraints are the geometry of the electromagnet and the capabilities of our amplifier : both the current <span class="math inline">\(I\)</span> and the voltage <span class="math inline">\(U\)</span> are limited (hence, <span class="math inline">\(I&lt;I_0\)</span> and <span class="math inline">\(U&lt;U_0\)</span>).</p>
+<p>Working first in DC current, we can write Ohm's law <span class="math inline">\(U = RI\)</span>. We can write <span class="math inline">\(R\)</span> as a function of the parameters :</p>
+<p>The number of turns is <span class="math inline">\(N = \frac{(d_{out}-d_{in})}{2d_{wire}}\frac{h}{d_{wire}}\)</span> and the average circumference is <span class="math inline">\(\pi \frac{d_{out} + d_{in}}{2}\)</span>, so the total length is <span class="math inline">\(l = \frac{(d_{out}^2-d_{in}^2)\pi h}{4d_{wire}^2}\)</span>. The resistance is therefore <span class="math inline">\(R = \frac{(d_{out}^2-d_{in}^2)\pi h}{4d_{wire}^2}\frac{4\rho}{\pi d_{wire}^2} = \frac{(d_{out}^2-d_{in}^2) h\rho}{d_{wire}^4}\)</span>.</p>
+<p>At <span class="math inline">\(U=U_0\)</span>, we want <span class="math inline">\(I = U_0/R \leq I_0\)</span> which means <span class="math inline">\(\frac{U_0d_{wire}^4}{(d_{out}^2-d_{in}^2) h\rho}\leq I_0\)</span>. With a given geometry (hence <span class="math inline">\(d_{out} , d_{in},h\)</span> are fixed), we get an upper bound for <span class="math inline">\(d_{wire}\)</span> :</p>
+<p><span class="math display">\[d_{wire} \leq \sqrt[4]{\frac{h\rho (d_{out}^2-d_{in}^2)I_0}{U_0}}\]</span> and since we want to maximize <span class="math inline">\(NI= \frac{h(d_{out}-d_{in})}{2d_{wire}^2}\frac{U_0d_{wire}^4}{(d_{out}^2-d_{in}^2) h\rho} = \frac{U_0d_{wire}^2}{2\rho(d_{out}+d_{in})}\)</span> , we want to maximize <span class="math inline">\(d_{wire}\)</span>.</p>
+<p>Therefore, for a given geometry and amplifier, at DC current, it is optimal to have <span class="math display">\[d_{wire} = \sqrt[4]{\frac{h\rho (d_{out}^2-d_{in}^2)I_0}{U_0}}\]</span>. This approach is simply a form of impedance matching, between the amplifier and the magnetic field.</p>
+<h3 id="the-cylindrical-core">The cylindrical core</h3>
+<p>In low intensity fields, a ferromagnetic material can be considered linear (see table below), hence <span class="math inline">\(\overrightarrow{H}=\frac{1}{\mu_0\mu_r} \overrightarrow{B}\)</span>, and inside an infinite solenoid we get</p>
+<p><span class="math inline">\(B = \mu_r \frac{\mu_0 N}{l}I\)</span> (ref cours Sornette)</p>
+<p>Hence, the ferro-magnetic core passively amplifies the field generated by the coil. [^Energy is conserved, since the coil must provide additional power to rise to the amplitifed field : the inductance of the coil becomes <span class="math inline">\(L = \mu_r \frac{\mu_0 N^2S}{l}\)</span>.]</p>
+<p>To maximize the field above the coil, we want to choose a material with a high <span class="math inline">\(\mu_r\)</span> : One of the metal with the highest <span class="math inline">\(\mu_r\)</span> is a special alloy called µ-metal, but it is very expensive as a bulk material, and it is usually used as a shielding sheet. Another attractive material is soft-ferrite, but ferrites tend to saturate at very small magnetic field intensities making them unsuitable for anything but small electro-magnets (or signal filtering). Finally, pure iron and some steels have a high <span class="math inline">\(\mu_r\)</span> (though lower than that of ferrite at low <span class="math inline">\(B_0\)</span>) and have a high magnetic saturation limit. Additionally, steels have reasonable thermal conductivities, making it easier to evacuate the heat generated by the surrounding coil.</p>
+<pre class="r"><code>    Soft iron               Ferrite (TDK PE22)             MuMetal                    
+  B         MuR               B         MuR             B         MuR                        
+(tesla)                    (tesla)                   (tesla)                 
+==================          ==================       ====================                        
+0.0000   4075.4511          0.000     5704.912         0.0000   73398.5246                        
+0.8944   3768.2831          0.077     5633.436         0.0722   73398.5246                        
+1.2000   3166.8099          0.160     5424.336         0.1444   77009.7382                        
+1.4000   2380.6469          0.254     4781.793         0.2527   74441.0260                        
+1.5000   1595.4230          0.353     3578.099         0.3068   72787.8064                        
+1.5500    997.8273          0.385     2578.026         0.3249   71206.0556                        
+1.6000    674.1631          0.405     1499.123         0.3610   68146.5021                        
+1.6500    473.5731          0.419      778.228         0.3790   63014.8312                        
+1.7000    319.4254          0.439      347.272         0.4332   48685.4716                        
+1.7500    221.3841          0.465      129.890         0.4693   38841.3551                        
+1.8000    173.2094          0.487       47.974         0.5054   28360.2248                        
+1.8500    139.9732          0.527       16.847         0.5415   17641.2071                        
+1.9000    113.0668          0.599        6.883         0.5595   12919.5326                        
+1.9500     90.6347          0.687        3.903         0.5775    9452.6909                        
+2.0000     73.9636          0.815        2.640         0.6315    2244.9895                        
+2.0500     60.9549          1.015        1.976         0.6489     807.5867                        
+2.1000     51.1983          1.229        1.720         0.6624     178.6407                        
+2.1250     44.2498          1.422        1.574         0.6693      66.6538                        
+2.1500     38.2875          1.622        1.478         0.6825      29.9372                        
+2.1750     32.4063          1.782        1.423        20.0000       1.0343                        
+2.2000     25.9244          1.978        1.371                               
+2.2500     19.6678          2.175        1.303                               
+2.2797     15.2170          2.349        1.255                               
+2.3069     12.3584          2.494        1.239                               </code></pre>
+<p>The above table sums up the relative permabilities of Soft iron, ferrite and µ-metal. Data from the <a href="http://www.fieldp.com/magneticproperties.html#MuMetal">Field Precision LLC website</a>.</p>
+<p>Therefore, most holding electro-magnets have a steel core, and an outer steel ring that also helps focusing the field.</p>
+<p>Even with a simple geometry and simplifying assumptions like linear magnetic properties, the field generated by a thick finite solenoid <em>wound around a steel core</em> is difficult to get analytically. There is however extended litterature on the field generated by thick solenoid and permanent magnets : @@Walled1979 or @@Ravaud2010 detail complete formulae.</p>
+<p>We used a free simulation program <a href="http://www.femm.info/wiki/HomePage">FEMM</a>, commonly used in magnetostatics, to visualise the field.</p>
+<h3 id="force-on-the-string">Force on the string</h3>
+<p>Most guitar and piano strings are made in part of steel, which can be considered a magnetically linear material here. (see table above)</p>
+<p>When exposed to an external magnetic field <span class="math inline">\(\overrightarrow{H_{ext}} = \frac{1}{\mu_0} \overrightarrow{B_{ext}}\)</span>, the string reacts with a field <span class="math inline">\(\overrightarrow{B_{string}}=\mu_0\mu_r \overrightarrow{H_{ext}}\)</span> (inside the string).</p>
+<p>The exact formula for <span class="math inline">\(\overrightarrow{B_{ext}}\)</span> is complex and greatly depends on the geometry of the actuator and the materials used, but we can still use a semi-quantitative approach to get some results :</p>
+<p>Since the string is small compared to the variations of <span class="math inline">\(\overrightarrow{B_{ext}}\)</span>, we will assume the magnetic moment is constant accross the section of the string. This magnetic moment per unit of length is simply <span class="math inline">\(\overrightarrow{m\,} (x,y) = S_{\text{string}} \mu_0 \mu_r \overrightarrow{H_{ext}}(x,y)\)</span></p>
+<p><span class="math inline">\(\overrightarrow{B_{ext}}\)</span> is not uniform and its magnitude is stronger near the coil.</p>
+<p>The force acting on a section of the string is</p>
+<p><span class="math inline">\(\overrightarrow{f(x,y, z)} = \overrightarrow{\nabla\,}(\overrightarrow{m\,} \dot{} \overrightarrow{B_{ext}}) = \overrightarrow{\nabla\,}( S_{\text{string}} \mu_r \overrightarrow{B_{ext}}\dot{} \overrightarrow{B_{ext}}) = \overrightarrow{\nabla\,}\left( S_{\text{string}} \mu_r \left|\left|\overrightarrow{B_{ext}}\right|\right|^2\right)\)</span></p>
+<p>We are mostly interested in the projection of this force on the <span class="math inline">\(z\)</span> axis (and to a lesser extent, on the <span class="math inline">\(y\)</span> axis) in the axis of symetry of the cylinder.</p>
+<p>Hence <span class="math inline">\(f_z (x_0,y_0, z) = S_{\text{string}} \mu_r \frac{\partial}{\partial z} \left( B_x^2 + B_y^2 +B_z^2 \right) = S_{\text{string}} \mu_r \frac{\partial}{\partial z} B_z^2 = S_{\text{string}} \mu_r \left(\frac{\partial}{\partial z}B_z\right) B_z\)</span></p>
+<p><span class="math inline">\(B_{ext}\)</span> is directly proportional to the current in the coil, so <span class="math inline">\(f_z \propto I^2\)</span>.</p>
+<p>They are different approaches to get a more linear response. McPherson uses a DC offset@^McPherson2012 so that <span class="math inline">\(f_z = \alpha (I_0 + I_{signal})^2 \approx \alpha( I_0^2 + 2I_0I_{signal})\)</span>. The offset is adaptative : an envelope detector sets <span class="math inline">\(I_0\)</span> so that <span class="math inline">\(I_0 + I_{signal}\)</span> is positive but not too high (to avoid overheating the coil).</p>
+<p>Another approach used is to attach a permanent magnet to the electro-magnet assembly. This has the advantage of reducing the current injected (hence reduce the dissipated power), while also achieving intense fields, and it simplifies the amplifier circuit.</p>
+<p>This approach is justified by the fact that the magnetic field created by the current running in the coil can be seen as a rotating surface current in the coil inner cylinder, and the same model describes permanent cylindrical magnets@^Ravaud2010. Since the steel core will canalises the magnetic field lines of the permanent magnet below it, we can expect the steel core to be magnetised like a permanent magnet (but with the added benefit of having a high <span class="math inline">\(\mu_r\)</span>). FEMM Simulations proved this assumption to be reasonable for the typical fields used here : for the geometry of the electromagnet proposed by McPherson (see next paragraph), the fields <em>above the electromagnet</em>, generated either by injecting a current or adding a stack of neodymium magnets at the back, have a very similar decay profile.</p>
+<div class="figure">
+<img src="/img/decay.png" alt="FEMM simulations for the E-77-88 with a permanent neodymium magnet at the back (left) and with current flowing through the coil (right)" />
+<p class="caption">FEMM simulations for the E-77-88 with a permanent neodymium magnet at the back (left) and with current flowing through the coil (right)</p>
+</div>
+<div class="figure">
+<img src="/img/Magnetic_decay.png" alt="Normalized decay profiles of the fields shown in the above simulations" />
+<p class="caption">Normalized decay profiles of the fields shown in the above simulations</p>
+</div>
+<p>Hence we can expect the addition of permanent magnets at the back of the electromagnet to be similar to a DC current offset in the coil. This is the approach we used for this instrument : below the electromagnets are strong neodymium magnets that generate the necessary offset.</p>
+<h3 id="sourcing-the-actuator">Sourcing the actuator</h3>
+<p>The MRP design uses a model of electromagnet that has become a reference among augmented instruments : the <em>E-77-82</em> from <a href="http://www.electromechanicsonline.com/product.asp?pid=692"><code>ElectroMechanicsOnline.com</code></a>. It is a cylinder with a diameter of 20.8mm and a height of 19.6mm, with a steel core (diameter 7mm) and a steel outer casing (thickness 0.5mm). It has a resistance of around <span class="math inline">\(5.5\Omega\)</span> and an inductance of 19mH @^McPherson2012 , and approximately 1000 turns.</p>
+<p>We added three 3mm thick neodymium magnets (grade N42, diameter 18mm) at the back, and quickly milled little wood pieces that would hold the magnet at a reasonable distance from the string (6mm). This distance was chosen after exciting the string with a sine at its resonance frequency, and changing the height to get a good amplitude of oscillation without having the string hitting the actuator.</p>
+<div class="figure">
+<img src="/img/IMG_3388%20copy.JPG" alt="The E-77-82 electromagnet with neodymium permanent magnets" />
+<p class="caption">The E-77-82 electromagnet with neodymium permanent magnets</p>
+</div>
+<div class="figure">
+<img src="/img/IMG_3389%20copy.JPG" alt="The E-77-82 installed beneath the string with its custom support part" />
+<p class="caption">The E-77-82 installed beneath the string with its custom support part</p>
+</div>
+<p>For the geometry of this electromagnet and an amplifier with <span class="math inline">\(I_0 = 1A\)</span> and <span class="math inline">\(U_0 = 10V\)</span>, the optimisation of the diameter of the wire gives <span class="math inline">\(d_{wire} = 0.40 \text{mm}\)</span> or in the American gauge system AWG26, which is close to the AWG28 that McPherson recommends . But since the expression uses a 4th-root, and since this optimisation neglects inductance, we mostly want the resistance to be in the range of <span class="math inline">\(4\Omega\)</span> to <span class="math inline">\(15\Omega\)</span>, adapted to speaker amplifiers (typical expected impedance <span class="math inline">\(8\Omega\)</span>).</p>
+<p>These electromagnets being relatively expensive and made within a high DC resistance tolerance, we tried to find a more affordable alternative. We found that <em>Wuxue Wen Fang Electric Co Ltd</em> makes electromagnets with similar characteristics, at a much lower price. These magnets are sold on <code>ebay.com</code> through various Chinese sellers. They seem to always have &quot;0.8A 5V&quot; in their listed name, but will call them using the printed name <em>WF-P25/20</em>. They have an outside diameter of 25mm and a height of 20mm, a 10mm diameter steel core, and a typical resistance of <span class="math inline">\(7.0\Omega\)</span>.</p>
+<div class="figure">
+<img src="/img/IMG_3823%20copy.JPG" alt="The WF-P25/20 electromagnet" />
+<p class="caption">The WF-P25/20 electromagnet</p>
+</div>
+<blockquote>
+<p>Note : A quantitative comparison between the two electromagnets can be found in the <a href="/magnetic_scanner_results"><em>magnetic scanner results</em></a> section.</p>
+</blockquote>
+<p>Having now suitable actuators for the instrument, we can move on to the <a href="/choosing_sensors">choice of the sensors</a>.</p>

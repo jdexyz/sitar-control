@@ -1,0 +1,113 @@
+<h1 id="controlling-the-timbre">Controlling the timbre</h1>
+<h2 id="the-phase-lock-system">The phase lock system</h2>
+<p>The output signal is a sum of sine waves which amplitudes vary to damp or increase each modal amplitude. To sync the phase for each mode, we simply used the output phase of the Fourier coefficient algorithm described in [].</p>
+<p>An important consequence of the assumption we made earlier that all the waves are standing waves is that there is no phase shift between the signal seen at the end and at the middle of the string : there can be a difference of amplitude and a change of sign (ruled by the term <span class="math inline">\(\sin(n\pi x_0/L)\)</span>) but the signal is the same everywhere.</p>
+<p>When the predefined frequency of analysis <span class="math inline">\(\omega_0\)</span> does not exactly match the actual frequency of the string <span class="math inline">\(\omega\)</span>, the output of the state sensor-algorithm outputs <span class="math inline">\(\phi(t)\)</span> so that <span class="math inline">\(\sin\left(\omega_0t + \phi(t)\right) = \sin(\omega t + \psi)\)</span>. This property insured us that we would always drive the system at the right frequency.</p>
+<p>However robust, the output <span class="math inline">\(\phi(t)\)</span> was still noisy and we chose to filterate the driving signals <span class="math inline">\(\sin\left(\omega_{0,n}t + \phi_n(t)\right)\)</span>, with a moving average.</p>
+<p>A moving average is a very simple case of an IIR filter (Infinite Impulse Response). Though not optimal in its filtering properties, it is very inexpensive to compute. Because of the high sampling frequency and the low frequency of interest, biquad filters were not used here.</p>
+<h2 id="the-code-architecture">The code architecture</h2>
+<p>In the complete script we first declare all the arrays that we will need for the moving averages and for data logging (arrays are filled with the values before being written only at the very end of the script). We also initialiase all log files, with defining information (such as the tested targets), and we pre-calculate the exponential and store it in a lookup table.</p>
+<p>The core of the processing is inside the <code>render</code> function of the Bela environment. It loops for each new sample coming from the ADC. We first update the values of the state-sensor algorithm, for each mode. The below code blocks only show one mode for clarity :</p>
+<pre class="cpp"><code>exponentialTimesSamples_M1_R_Sum -= exponentialTimesSamples_M1_R[sampleIndex];
+exponentialTimesSamples_M1_I_Sum -= exponentialTimesSamples_M1_I[sampleIndex];
+
+latestSample = audioRead(context, n, 0);
+
+exponentialTimesSamples_M1_R[sampleIndex] = latestSample*COMPLEX_EXPONENTIAL_TABLE_M1_R[sampleIndex];
+exponentialTimesSamples_M1_I[sampleIndex] = latestSample*COMPLEX_EXPONENTIAL_TABLE_M1_I[sampleIndex];
+
+exponentialTimesSamples_M1_R_Sum += exponentialTimesSamples_M1_R[sampleIndex];
+exponentialTimesSamples_M1_I_Sum += exponentialTimesSamples_M1_I[sampleIndex];
+
+amplitude_squared_M1 = (exponentialTimesSamples_M1_R_Sum*exponentialTimesSamples_M1_R_Sum + exponentialTimesSamples_M1_I_Sum*exponentialTimesSamples_M1_I_Sum)*ONE_OVER_NUMBER_OF_SAMPLES_SQUARED;
+
+phase_M1 =  (amplitude_squared_M1&gt;0.1) ? atan2(exponentialTimesSamples_M1_I_Sum,exponentialTimesSamples_M1_R_Sum) : 0;
+// The Phase is set to zero when the amplitude is too low, as the result would be unpredictable
+
+
+sampleIndex = (sampleIndex + 1)%NUMBER_OF_SAMPLES;</code></pre>
+<p>We then calculate the driving signal by smoothing the synced sine with a moving average, compensating for the induced phase shift.</p>
+<pre class="cpp"><code>phaseAverageSum_M1 -= phaseAverageArray_M1[averagingPhasesIndex];
+phaseAverageArray_M1[averagingPhasesIndex] = sin(sampleIndex*PHASE_INCREMENT_M1 - PI/2 + phase_M1);
+phaseAverageSum_M1 += sin(sampleIndex*PHASE_INCREMENT_M1 - PI/2 + phase_M1 + PHASE_OFFSET_M1);
+
+averagingPhasesIndex = (averagingPhasesIndex+1)%NUMBER_OF_AVERAGING_PHASES;</code></pre>
+<p>The phase shift is easy to calculate :</p>
+<pre class="cpp"><code>const float PHASE_OFFSET_M1 = (PHASE_INCREMENT_M1*NUMBER_OF_AVERAGING_PHASES)/2.0;</code></pre>
+<p>Just like for the phase, we also smooth the detected amplitude with a moving average :</p>
+<pre class="cpp"><code>amplitudeAverageSum_M1 -= amplitudeAverageArray_M1[averagingAmplitudesIndex];
+amplitudeAverageArray_M1[averagingAmplitudesIndex] = sqrt(amplitude_squared_M1);
+amplitudeAverageSum_M1 += amplitudeAverageArray_M1[averagingAmplitudesIndex];
+
+averagingAmplitudesIndex = (averagingAmplitudesIndex+1)%NUMBER_OF_AVERAGING_AMPLITUDES;
+</code></pre>
+<p>Then, we calculate the gain factor for the driving signal. Here we use a proportional control, and the target has been set in advance. Knowing that the DAC of the Bela will saturate for values above <code>1</code>, we also restrict the amplitude of the output signal to safe values, to avoid saturation.</p>
+<pre class="cpp"><code>gain_M1 = PROPORTIONAL_GAIN_M1*(target_M1 - (amplitudeAverageSum_M1*ONE_OVER_NUMBER_OF_AVERAGING_AMPLITUDES));
+gain_M1 = (abs(gain_M1) &gt; 1) ? ((0 &lt; gain_M1) - (gain_M1 &lt; 0))*1 : gain_M1;
+// Which means :
+//          |  -1       if gain_M1&lt;-1
+//gain_M1 = |  +1       if gain_M1&gt;1
+//          |  gain_M1  overwise</code></pre>
+<p>We can now compute the output value, and send it to the ADC</p>
+<pre class="cpp"><code>outputCommand =    gain_M1 * drivingSyncedSine_M1
+                +  gain_M2 * drivingSyncedSine_M2
+                +  gain_M3 * drivingSyncedSine_M3
+                +  gain_M4 * drivingSyncedSine_M4
+                +  gain_M5 * drivingSyncedSine_M5
+                ;
+
+
+audioWrite(context, n, 0, outputCommand); // Left Channel
+audioWrite(context, n, 1, outputCommand); // Right Channel
+</code></pre>
+<p>At the end of the loop, we log the values of interest at different frequencies :</p>
+<ul>
+<li>The sensor input and command ouput are logged at <span class="math inline">\(44.1\text{kHz}\)</span></li>
+<li>The slowly changing components such as amplitudes, phase-shifts, gains, are only logged at <span class="math inline">\(441\text{Hz}\)</span>, to save disk space</li>
+</ul>
+<p>The <code>cleanup</code> routine then flushes all buffers into their corresponding files.</p>
+<h3 id="optimizations">Optimizations</h3>
+<p>A few simple optimizations have been used to increase the speed of the system :</p>
+<ul>
+<li>All numbers are represented as <code>float</code>s taking advantage of hardware accelerations</li>
+<li>The above code blocks use standard <code>C++</code> functions for calculating sines (for clarity), square roots and absolute values, while the actual code uses <a href="https://github.com/BelaPlatform/Bela/wiki/Fast-math-functions">fast math functions</a> that also rely on the hardware of the BeagleBone.</li>
+</ul>
+<blockquote>
+<p>We also want to implement other ideas, which first need to be tested :</p>
+<ul>
+<li>All averaging arrays could have a fixed length of 64 or 32 and could merged into one array that would use bitwise operations to separate the values. This would allow the array to be stored in cache and not RAM for faster processing.</li>
+<li>We could use auxiliary functions to refresh the state vector instead of putting all the calculations in the main thread. This would ensure no audio frame can be missed, while still enabling fast control. Only the driving signal would be computed in the main thread.</li>
+<li>We could try to remove the lookup table for the exponential signal and just calculate its value using the optimized functions</li>
+</ul>
+</blockquote>
+<h2 id="proportional-control">Proportional control</h2>
+<p>We can finally apply the proposed control to the system.</p>
+<p>We initially tried to maintain a fixed amplitude position for the first and second modes. The system is stable, though slow.</p>
+<div class="figure">
+<img src="/img/TAR_M1_10__TAR_M2_5.png" alt="A first attempt to control the system with fixed amplitudes. The target for mode 1 is 10, and the target for mode 2 is 5." />
+<p class="caption">A first attempt to control the system with fixed amplitudes. The target for mode 1 is 10, and the target for mode 2 is 5.</p>
+</div>
+<p>The sudden changes in amplitude are caused by us stopping the vibration or hitting the string with a plectrum.</p>
+<p>Here is the audio recording of the test :</p>
+<audio controls>
+<source src="media/SmoothedControl__TAR_M1_10__TAR_M2_5.ogg" type="audio/ogg">
+<source src="media/SmoothedControl__TAR_M1_10__TAR_M2_5.mp3" type="audio/mp3">
+</audio>
+<p>The same experiment, with a different, smaller target : <img src="/img/SmoothedControl__TAR_M1_0.6__TAR_M2_4.png" alt="Another attempt with a smaller target. The system restores its state very quickly. The target for mode 1 is 0.6, and the target for mode 2 is 4." /></p>
+<audio controls>
+<source src="media/SmoothedControl__TAR_M1_0.6__TAR_M2_4.ogg" type="audio/ogg">
+<source src="media/SmoothedControl__TAR_M1_0.6__TAR_M2_4.mp3" type="audio/mp3">
+</audio>
+<p>The limiting factor was the saturation limit of the Bela DAC, as the current-output amplifier needed a large analog gain. This stopped us from digitally adding a more aggressive gain.</p>
+<p>We added a preamplifier stage to the current-output to overcome this issue.</p>
+<p>The added gain made the system much more responsive but also (predictably) more unstable.</p>
+<div class="figure">
+<img src="/img/SmoothedControl__TAR_M1_10__TAR_M2_10_new.png" alt="The more aggressive proportional control. The target for mode 1 is 10, and the target for mode 2 is 10." />
+<p class="caption">The more aggressive proportional control. The target for mode 1 is 10, and the target for mode 2 is 10.</p>
+</div>
+<p>The audio for this experiment :</p>
+<audio controls>
+<source src="media/SmoothedControl__TAR_M1_10__TAR_M2_10_new.ogg" type="audio/ogg">
+<source src="media/SmoothedControl__TAR_M1_10__TAR_M2_10_new.mp3" type="audio/mp3">
+</audio>
+<p>This is unfortunately the last experiment we had the time to conduct before writing this report.</p>

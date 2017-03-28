@@ -1,0 +1,71 @@
+<h1 id="discussion-technical-compairison-with-other-setups">Discussion : technical compairison with other setups</h1>
+<h2 id="the-magnetic-resonator-piano">The Magnetic Resonator Piano</h2>
+<p>The Magnetic Resonator Piano (MRP)@^McPherson2010 is an augmented piano which strings are excited by electromagnets driven by current amplifiers. A modified optical sensor bar is attached to the keys, and the resulting signal is processed to generate the driving signal of the magnets. Different modes have been developed to allow the player to get usually impossible sounds from the piano, such as crescendo from silence or harmonics excitation.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/watch?v=f79d_oVqv4Y" frameborder="0" allowfullscreen>
+</iframe>
+<p>The instrument is hybrid, as the hammer mechanism is intact and the musican can play on both registers at the same time.</p>
+<h3 id="difference-with-our-approach">Difference with our approach</h3>
+<p>Our instrument is a lot inspired by the MRP, as we had the occasion to visit the Centre For Digital Music in November 2016 during the internship, and we found the instrument to be very impressive. Futhermore, A.McPherson papers@^McPherson2012 detailing its contruction proved very helpful, providing a reference for the choice of the electromagnets and the design of the current amplifier.</p>
+<p>The goals of the two instruments are quite different : the MRP aims at augmenting the piano with a new set of possible sounds and attacks. The focus is less on the timbre and more on the compositional possibilities added by the actuators, though it still allows for new timbres.</p>
+<p>From a technical standpoint, the MRP is built as a quickly added and removed extension to a grand piano whereas our instrument was directly built with control in mind. We also use one piezo system per string instead of one per instrument.</p>
+<p>Though the first MRP used a phase lock system, it has been abandoned in the latest version, and the system is in an open loop configuration.</p>
+<h2 id="ircams-approach">Ircam's approach</h2>
+<p>A.Mamou-Mani and his team have developed an extensive active control method for stringed musical instrument.</p>
+<p>What follows is a short summary of what we interpreted to be the key points of S. Benacchio's thesis (@@Benacchio2014) and papers (@@Benacchio2016). The current version of this active control method may have changed.</p>
+<iframe frameborder="0" width="480" height="270" src="//www.dailymotion.com/embed/video/x3ztxev" allowfullscreen>
+</iframe>
+<p>The first step is to assume the system can be modeled as an array of linearly connected second order resonators. Diagonalizing the model allows to see the model from a modal perspective :</p>
+<p><span class="math display">\[\boldsymbol{M\ddot{\delta}}(t) + \boldsymbol{C\dot{\delta}}(t) + \boldsymbol{K{\delta}}(t) = \boldsymbol{F}(t)\]</span> becomes <span class="math display">\[\boldsymbol{\ddot{q}}(t) + 2\boldsymbol{\Xi\Omega\dot{q}}(t)  + \boldsymbol{\Omega^2 q}(t)  = \boldsymbol{\tilde{F}}(t)\]</span></p>
+<p>The state vector is <span class="math inline">\(x(t) = \left[ \begin{matrix}\boldsymbol{q}(t)\\ \boldsymbol{\dot{q}}(t) \end{matrix} \right]\)</span>, and the governing equation of the system is</p>
+<p><span class="math inline">\(\boldsymbol{\dot{x}}(t) = \boldsymbol{Ax}(t) + \boldsymbol{B}u(t) + \boldsymbol{G}w(t)\)</span></p>
+<p>The key element here is to use a state and state-derivative control to change the effect of the perturbation. On a one dimension model without control, we have (removing the command and perturbation gains for clarity)</p>
+<p><span class="math display">\[\ddot{q}(t) + 2\xi\omega\dot{q}(t) + \omega^2q(t) = w(t) \quad(1)\]</span></p>
+<p>With <span class="math inline">\(u= -\boldsymbol{K_1 x}(t) - \boldsymbol{K_2\dot{x}}(t) = -k\ddot{q} -k&#39;\dot{q} - k&#39;&#39;q\)</span>, we get</p>
+<p><span class="math inline">\((1 + k&#39;&#39;)\ddot{q}(t) + (2\xi\omega + k&#39;)\dot{q}(t) + (\omega^2 + k)q(t) = w(t) \quad (2)\)</span></p>
+<p>By setting <span class="math inline">\(k = \omega^2 k&#39;&#39;\)</span> and <span class="math inline">\(k&#39; = 2\xi\omega k&#39;&#39;\)</span>, we can re-write <span class="math inline">\((2)\)</span> as <span class="math inline">\(\ddot{q}(t) + 2\xi\omega\dot{q}(t) + \omega^2q(t) = (1+k&#39;&#39;)^{-1}w(t)\)</span></p>
+<p>This type of control can be seen as a &quot;control of the amplitude of the pertubation&quot; (ref these@^Benacchio2016) : with this control, we can chose for each mode how the system will perceive the external perturbation. In practical terms, the musician, by setting the <span class="math inline">\(k_n&#39;&#39;\)</span> parameters, can modify each mode response to the excitation (his hand).</p>
+<p>Other ways to influence the system also include modifying the modal frequencies (by only modifying <span class="math inline">\(k\)</span> in equation <span class="math inline">\((2)\)</span>), damping coefficients (<span class="math inline">\(k&#39;\)</span> in <span class="math inline">\((2)\)</span>), or modal masses (<span class="math inline">\(k&#39;&#39;\)</span> in <span class="math inline">\((2)\)</span>).</p>
+<p>This allows the player to shape the EQ at will, increase the overall volume and to play difficult unstable notes.</p>
+<p>This approach requires fast and deterministic computing power, which is why a system@^Piechaud2014 based around the BeagleBone Black (also used by the Bela system) was built. It allows an impressive round trip latency of <em>3µs</em>.</p>
+<h3 id="difference-with-our-approach-1">Difference with our approach</h3>
+<p>While Ircam's approach allows for fine tuning of the instrument resonant frequencies, resonant amplitudes and seems very transparent to the player.</p>
+<p>The control developed here only aims at controlling the <em>amplitude</em> of each mode, making them follow trajectories to reproduce other instruments trimbre.</p>
+<p>In other words, if <span class="math inline">\(q = C(t)\sin(\omega t + \phi(t))​\)</span>, Ircam's control will try to modify <span class="math inline">\(q​\)</span> and its equation directly, while we only care about <span class="math inline">\(|C(t)|​\)</span> and its evolution.</p>
+<h2 id="paul-vos-vo-96">Paul Vo's <em>Vo-96</em></h2>
+<p>The Vo-96 is an addon to folk guitars that augments them with control over the vibration of the strings. Little can be found about the actual technology used, as Paul Vo, its author, has kept a culture of secret around the instrument, with no publication or patent to this day.</p>
+<p>According to the commercial description, this device, which is an evolution of the Moog Guitar design, uses 12 electromagnets to drive the vibration of the strings. The vibrations can be damped or sustained, with possible timbre patterns and a total of 96 controllable harmonics (hence the name).</p>
+<p>The results are very impressive :</p>
+<iframe width="560" height="315" src="https://www.youtube.com/watch?v=psqPViFKkjg" frameborder="0" allowfullscreen>
+</iframe>
+<h3 id="reverse-engineering-the-design-of-the-actuator">Reverse-engineering the design of the actuator</h3>
+<div class="figure">
+<img src="/img/lev-96-6.jpg" alt="The actuators installed on the guitar (from newatlas)" />
+<p class="caption">The actuators installed on the guitar (from <a href="http://newatlas.com/moog-music-lev-96-sensoriactuator/25017/">newatlas</a>)</p>
+</div>
+<div class="figure">
+<img src="/img/lev-96-4.jpg" alt="Rare picture of the actuators PCB, (from newatlas)" />
+<p class="caption">Rare picture of the actuators PCB, (from <a href="http://newatlas.com/moog-music-lev-96-sensoriactuator/25017/">newatlas</a>)</p>
+</div>
+<p>In <a href="http://paulvomusic.com/invention-of-vibration-control/">his blog</a>, P.Vo emphases that the key element of this technique is to use the same electromagnet for sensing and driving the string. The pictures of the assembly seem to suggest a <a href="https://en.wikipedia.org/wiki/Humbucker">humbucking</a> configuration (a dual coil arrangement that cancels the mains hum by inverting winding directions).</p>
+<div class="figure">
+<img src="/img/Reverse_engineering_VO96.svg" alt="Schematic of a humbucking coil configuration, introducing the notations used below" />
+<p class="caption">Schematic of a humbucking coil configuration, introducing the notations used below</p>
+</div>
+<p>We believe the sensor-actuator works in the following manner :</p>
+<p>The two coils are identical, and both are wound around a steel core that is magnetised vertically. The two directions are opposite, as seen on the above diagram. We assume the coils and the distance between them are small enough so that the string above them can be considered horizontal. Thus the voltage induced by its motion will be of the same amplitude in both coils.</p>
+<p>We will call <span class="math inline">\(V_A = V_{A1} - V_{A2}\)</span> and <span class="math inline">\(V_B = V_{B1} - V_{B2}\)</span>.</p>
+<p>The voltages at the two coils are functions of their respective currents, of the current of the other coil through induction, and of the change of flux due to the movement of the magnetised string. Hence :</p>
+<p><span class="math display">\[V_A = L \frac{\text{d}I_A}{\text{d}t}  + M \frac{\text{d}I_B}{\text{d}t} + V_{string}\]</span></p>
+<p><span class="math display">\[V_B = L \frac{\text{d}I_B}{\text{d}t}  + M \frac{\text{d}I_A}{\text{d}t} - V_{string}\]</span></p>
+<p>If we impose <span class="math inline">\(I_B = \alpha I_A\)</span>, where <span class="math inline">\(\alpha \neq 1\)</span> and <span class="math inline">\(\alpha \neq -1\)</span>, we get</p>
+<p><span class="math display">\[V_A = (L +\alpha M) \frac{\text{d}I_A}{\text{d}t}  + V_{string}\]</span></p>
+<p><span class="math display">\[V_B = (\alpha L +  M) \frac{\text{d}I_A}{\text{d}t} - V_{string}\]</span></p>
+<p>Substracting and adding the two equations yield <span class="math display">\[ V_A - V_B = (1-\alpha)(L - M)\frac{\text{d}I_A}{\text{d}t}  + 2V_{string} \]</span></p>
+<p><span class="math display">\[ V_A + V_B = (1+\alpha)(L + M)\frac{\text{d}I_A}{\text{d}t}\]</span></p>
+<p>Thus we can derive the actual string signal :</p>
+<p><span class="math display">\[2 V_{string} = (V_A - V_B) - \frac{(L-M)(1-\alpha)}{(L+M)(1+\alpha)}(V_A + V_B)\]</span> (<span class="math inline">\(|M|&lt;L\)</span> since the mutual inductance is always smaller than the self inductance)</p>
+<p><span class="math inline">\(\frac{(L-M)(1-\alpha)}{(L+M)(1+\alpha)}\)</span> is simple to calibrate experimentally, and the above formula can easily be implemented using operational amplifiers. If electromagnet A is current-driven (thus <span class="math inline">\(I_A\)</span> is imposed), then we can simultaneously apply a force and sense the motion of the string. It is important to have <span class="math inline">\(\alpha &lt;0\)</span>, since the permanent magnet directions are opposite, and the force must be in the same direction for both electromagnets.</p>
+<p>However, the humbucking configuration looses its main appeal : in reality, the signals are polluted by mains hum, which means that <span class="math display">\[V_A = (L +\alpha M)\frac{\text{d}I_A}{\text{d}t}  + V_{string} + V_{hum}\]</span> and <span class="math display">\[ V_B = (\alpha L +M)\frac{\text{d}I_A}{\text{d}t} - V_{string} + V_{hum} \]</span>, so <span class="math display">\[ 2V_{string} = (V_A - V_B) - \frac{(L-M)(1-\alpha)}{(L+M)(1+\alpha)}(V_A + V_B)  - \frac{(L-M)(1-\alpha)}{(L+M)(1+\alpha)} V_{hum} \]</span>. A solution is to use a notch filter at 50/60Hz, or to use more advanced filtering techiques.</p>
+<h3 id="differences-with-our-approach">Differences with our approach</h3>
+<p>Vo's instrument shows a very convincing control over the vibration of the strings that the current version of our instrument is not yet able to compete with.</p>
+<p>Apart from the fact that our instrument uses a piezo sensor at the end of the string, it is difficult to see the technical differences with our approach, as we have no physical access to a <em>Vo-96</em>.</p>

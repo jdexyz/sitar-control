@@ -1,0 +1,120 @@
+<h1 id="the-state-sensor-algorithm">The state-sensor algorithm</h1>
+<h2 id="summary">Summary</h2>
+<p>To transform the signal coming from the piezo into a vector of mode amplitudes and phases, we needed an efficient and predictable algorithm similar to an FFT. Using our knowledge of the frequencies of the signal, we built and optimized an algorithm akin to the Sliding DFT that is unnaffected by windowing effects, compensates for small changes in frequencies and provides a multi-mode phase lock mechanism.</p>
+<h2 id="basic-concept">Basic concept</h2>
+<p>The idea of a modal control relies on the property of the instrument of only allowing certain frequencies, i.e. the fundamental and the harmonics. It also means that the sensor will see a pseudo periodic signal at with fixed frequency. We can thus use Fourier decomposition to analyse the signal and derive the amplitude and phase of its harmonics.</p>
+<p>If <span class="math inline">\(s\)</span> were completely periodic, we could write it as a Fourier series :</p>
+<p><span class="math display">\[ s(t) = \sum_{n\in \mathbb{N}} C_n\sin(2\pi n f_0t + \phi_n)\]</span></p>
+<p>We would then calculate <span class="math inline">\(C_n\)</span> and <span class="math inline">\(\phi_n\)</span> using Fourier analysis :</p>
+<p><span class="math display">\[C_n =\frac{2}{T_0}\left|\int_0^{T_0} s(t)\exp(-2i\pi n f_0t ) \text{ d}t\right|\]</span> and <span class="math display">\[\phi_n =\arg\left(\frac{2}{T_0}\int_0^{T_0} s(t)\exp(-i2\pi n f_0t ) \text{ d}t\right) + \frac{\pi}{2}\]</span></p>
+<p>Instead, <span class="math inline">\(s\)</span> can only be considered periodic during small time intervals, which means that in <span class="math inline">\((1)\)</span>, <span class="math inline">\(C_n\)</span> and <span class="math inline">\(\phi_n\)</span> are not constant but are changing slowly (with respect to the frequency of oscillation, that is <span class="math inline">\(nf_0\)</span>).</p>
+<p>Thus, we can see <span class="math inline">\(s\)</span> as :</p>
+<p><span class="math display">\[ s(t) \approx \sum_{n\in \mathbb{N}} C_n(t)\sin(2\pi n f_0t + \phi_n(t))\]</span></p>
+<p>In numerical analysis, a usual way to get <span class="math inline">\(C_n\)</span> and <span class="math inline">\(\phi_n\)</span> would be to use one of the FFT algorithms. They calculate the entire Discrete Fourier Transform for a given array of samples, in an optimal way : from a sequence of <span class="math inline">\(x_n\)</span> representing the signal, they calculate <span class="math display">\[X_k = \sum_{n=0}^{M-1} x_m \exp(-2\pi i k m /M)\]</span> for <span class="math inline">\(k \in [[0, N-1]]\)</span>. The FFT algorithms (any algorithm that can calculate these sums faster than the naive method) have a computational cost that depends on the sample size <span class="math inline">\(M\)</span>, i.e. the number of values that represent the signal. The frequency precision is also dependent on the size of this array. An FFT is considered optimal when its cost is <span class="math inline">\(O(M\log(M))\)</span>. For a <span class="math inline">\(74\text{Hz}\)</span> signal sampled at <span class="math inline">\(44100\text{Hz}\)</span>, it would mean an array of 600 values, and a computational cost of roughly 2000 operations. A solution is simply to reduce the sample rate, but it also means reducing the frequency resolution. Another issue is windowing : the sample array does not contain an exact number of periods of a given frequency (except when <span class="math inline">\(f_s/M\)</span> is a multiple of the frequency of interest; <span class="math inline">\(f_s\)</span> being the sampling frequency). This causes inaccuracies or <em>leakage</em>, which are mitigated by <em>windowing</em> techniques, but they all have tradeoffs.</p>
+<p>In our case, we already know the exact frequencies we want to analyse, and we aim at having a very high refresh rate. Going back to the original formula for <span class="math inline">\(s\)</span>, we can define <span class="math display">\[C_n (t) = \frac{2}{T_0}\left|\int_{t-T_0}^{ t} s(\tau)\exp(-2i\pi n f_0 \tau ) \text{ d}\tau\right|\]</span> and <span class="math display">\[\phi_n(t) =\arg\left(\frac{2}{T_0}\int_{t-T_0}^{t} s(\tau)\exp(-i2\pi n f_0  \tau) \text{ d}\tau\right) + \frac{\pi}{2} \]</span></p>
+<p>And compute it numerically :</p>
+<p><span class="math display">\[C_{n,k} = \frac{2}{MT_0}\left|\sum_{m=1}^{M} s_{k-M+m}\exp\left(-\frac{2i\pi n f_0 (k-M+m)}{f_s}\right) \right|\]</span> and</p>
+<p><span class="math display">\[\phi_{n,k} = \arg\left(\frac{2}{MT_0} \sum_{m=1}^{M} s_{k-M+m}\exp\left(-\frac{2i\pi n f_0 (k-M+m)}{f_s}\right)\right) + \pi/2\]</span></p>
+<p>where <span class="math inline">\(s_{k} = s(k/ f_s)\)</span> is the discrete equivalent of the continuous signal <span class="math inline">\(s(t)\)</span>.</p>
+<p>Here, we only compute the DFT at specific frequencies, and we can tune the sample size <span class="math inline">\(M\)</span> to avoid windowing issues by setting it at <span class="math inline">\(M = f_S/f_0\)</span>, i.e. we sample exactly one period of the fundamental frequency.</p>
+<p>For convenience, let's define <span class="math inline">\(e_n = \exp\left(\frac{-2i\pi n f_0}{f_s}\right)\)</span>.</p>
+<p>The core of the algorithm is the sum <span class="math display">\[\sigma_{n,k} = \sum_{m=1}^{M} s_{k-M+m} e_n^{k-M+m}\]</span> .</p>
+<p>We have <span class="math inline">\(C_{n,k} = \frac{2}{MT_0}|\sigma_{n,k}|\)</span> and <span class="math inline">\(\phi_{n,k} =\arg(\frac{2}{MT_0}\sigma_{n,k})\)</span>. Computing <span class="math inline">\(\sigma_{n,k+1}\)</span>, we find <span class="math display">\[ \sigma_{n,k+1} = \sum_{m=1}^{M} s_{k+1-M+m} e_n^{k+1-M+m} = \sum_{m=2}^{M+1} s_{k-M+m} e_n^{k-M+m} = \sigma_{n,k}- s_{k-M+1}e_n^{k-M+1}  + s_{k+1}e_n^{k+1}\\ = \sigma_{n,k}- s_{k-M+1}e_n^{k+1} + s_{k+1}e_n^{k+1}\]</span></p>
+<p>(since <span class="math inline">\(e_n^M = 1\)</span>).</p>
+<p>Thanks to this property, we can compute <span class="math inline">\(\sigma_{n,k}\)</span> using only two complex multiplications and additions per cycle.</p>
+<p>The idea of the complete algorithm is to store the values of the sensor multiplied by their corresponding <span class="math inline">\(e_n^m\)</span> in a circular buffer, and then calculate the sum by removing the former last element and adding the new element.</p>
+<p>In pseudo script :</p>
+<pre class="c++"><code>sigma_n = sigma_n - S[k]
+S[k] = newSensorValue()*exp_n[k]
+sigma_n = sigma_n + S[k]
+k = (k+1)%M</code></pre>
+<p>Using this method, we can reduce the computational cost down to <span class="math inline">\(O(N)\)</span> (where <span class="math inline">\(N\)</span> is the number of harmonics of interest) at the maximum refresh rate, that is <span class="math inline">\(f_s\)</span>, independently of the sample size. We also eliminate windowing issues by sampling exactly one period of the signal.</p>
+<p>We later found that this algorithm uses the basis of the Sliding Discrete Fourier Transform@^Jacobsen2003 and almost identical to the modulated SFDT (mSDFT) algorithm@^Duda2010, with the difference that only specific frequencies are targeted, and that the sample size is tuned to avoid windowing effects. Unlike in the mSFDT, having only the phase shift and not the absolute phase is a desirable effect, so we do not compensate for it.</p>
+<h2 id="stability-concerns">Stability concerns</h2>
+<p>Typical DFTs have a well known stability issue : they are only marginally stable, with poles around the unit circle. This algorithm shares the same stability as the mDFT algorithm, with one pole at exactly <span class="math inline">\(1\)</span>.</p>
+<p>We were, however afraid of systemic errors in the calculations of the sums and products involved in the moving sum. The end of this paragraph shows this fear was not justified, but the solution offers an interesting way to accurately compute a sum with always recently calculated terms.</p>
+<p>The method proposed here uses a different summing scheme that eliminates the summation error issue while keeping the computational cost at <span class="math inline">\(N\log(M)\)</span> where <span class="math inline">\(M\)</span> is the sample size and <span class="math inline">\(N\)</span> the number of modes of interest :</p>
+<p>We first build a binary tree of the previous sums of <span class="math inline">\(s_{n,i} e_n^i\)</span>, with the <span class="math inline">\(s_{n,i} e_n^i\)</span> at the end of the tree. Each upper node represents the sum of the two nodes below it. When a new input is added, it replaces the oldest one in the buffer, and the corresponding branch (from the top node to this node) is recalculated. This approach thus requires <span class="math inline">\(\log(M)\)</span> complex additions, and one complex multiplication per cycle and mode of interest.</p>
+<div class="figure">
+<img src="/img/Summation_scheme.svg" alt="The proposed summation scheme tree" />
+<p class="caption">The proposed summation scheme tree</p>
+</div>
+<p>On this graph, which represents a situation with a sample size of 8, the <span class="math inline">\(a_i\)</span> represent the signal buffer values, the <span class="math inline">\(b_i\)</span> represent the sums of the pairs of <span class="math inline">\(a_i\)</span>, and so on.</p>
+<p>When a new element is added to the buffer (and replaces the old value), for instance <span class="math inline">\(a_6\)</span>, we have to recalculate <span class="math inline">\(b_3 = a_5 + a_6\)</span>, but also <span class="math inline">\(c_2 = b_3 + b_4\)</span>, and finally <span class="math inline">\(d_1 = c_1 + c_2\)</span>.</p>
+<div class="figure">
+<img src="/img/Summation_scheme_new_element.svg" alt="The new summations need for updating the tree sum" />
+<p class="caption">The new summations need for updating the tree sum</p>
+</div>
+<p>This graph can easily be stored in an array, where the numbering is done by counting the elements from top to bottom, left to right. The algorithm then uses bitwise operation to move up in the tree : in pseudo code</p>
+<pre class="cpp"><code>S[sampleIndex] = newSensorValue()*exp_n[sampleIndex] // For example : sampleIndex = 1101
+tempSumIndex = sampleIndex &gt;&gt; 1 // = 0110
+S[tempSumIndex] = S[(tempSumIndex&lt;&lt;1)] + S[(tempSumIndex&lt;&lt;1)+1]
+tempSumIndex = sampleIndex &gt;&gt; 1 // = 0011
+S[tempSumIndex] = S[(tempSumIndex&lt;&lt;1)] + S[(tempSumIndex&lt;&lt;1)+1]
+tempSumIndex = sampleIndex &gt;&gt; 1 // = 0001
+S[tempSumIndex] = S[(tempSumIndex&lt;&lt;1)] + S[(tempSumIndex&lt;&lt;1)+1] // The total sum
+sampleIndex = ((sampleIndex&amp;0b0111) + 1)%M + 0b1000 // = 1110</code></pre>
+<p>This approach is not limited to sample sizes equal to powers of 2; the tree will just store zeros where the buffer stops. However, we must store a <code>2M</code> complex numbers array in the RAM, and the last calculation of <code>sampleIndex</code> uses a modulus division, which can be expensive.</p>
+<p>The stability of the algorithm was not a real issue in the actual system, since the sum did not seem to get corrupted after a few minutes at a constant excitation. Reducing the precision from <code>double</code> to <code>float</code> was not detrimental to the stability of the output either, but the gain in performance (using CPU accelerations) was remarquable. Thus the current version of the system implements the simple sum algorithm using <code>float</code> samples array of roughly 600 elements.</p>
+<h2 id="testing-accuracy-and-robustness-in-matlab">Testing accuracy and robustness in Matlab</h2>
+<p>The algorithm was tested for an application with low frequency (70Hz) signals, with a high sampling frequency (44.1 KHz), representing our test setup.</p>
+<p>Typical precision for amplitude or phase was better than 3% with an SNR of 0dB, and 1% at -6dB.</p>
+<p>We found that for when the amplitude increases over one period, the algorithm gives an approximate average of the amplitude over that period. The phase is more difficult to predict when the amplitude changes rapidly, but still within 10%.</p>
+<p>Precision seems independent from the number of harmonics added.</p>
+<p>When the frequency is different from the target frequency but within 1%, the amplitude is not affected, and the phase will vary so that <span class="math inline">\(\sin(2\pi n f_0 t + \phi_n(t))\)</span> remains at the frequency of the signal.</p>
+<p>A Matlab file with these tests is provided below.</p>
+<h2 id="the-issue-of-low-frequency-noise">The issue of low frequency noise</h2>
+<p>The issue with real sensor signal is that the noise is not always gaussian, and mains can pollute the signal in an unpredictable way.</p>
+<p>The low-frequency noise was a problem in our case since mains frequency (50Hz in Europe) is close to the system frequency (70Hz). It causes an oscillation of the amplitude and phase output values.</p>
+<p>Indeed if <span class="math inline">\(s(t) = \alpha \sin(2\pi f_0t) + \beta\sin(2\pi f_{hum} t + \phi) = \alpha \sin(\omega_0t) + \beta\sin(w_{h}t + \phi)\)</span>, we get : (to slightly simplify the equations, let's assume <span class="math inline">\(\phi=0\)</span>)</p>
+<p><span class="math display">\[C_0 (t) = \frac{2}{T_0}\left|\int_{t-T_0}^{ t} s(\tau)\exp(-\omega_0 \tau ) \text{ d}\tau\right| \\\]</span></p>
+<p><span class="math display">\[= \frac{2}{T_0}\left|\int_{t-T_0}^{ t} \big(\alpha \sin(\omega_0 t) + \beta\sin(\omega_{h} t )\big) \exp(-\omega_0 \tau ) \text{ d}\tau\right|\]</span></p>
+<p><span class="math display">\[= \left|-i\alpha  + \frac{2}{T_0}\int_{t-T_0}^{ t}  \beta\sin(\omega_{h} t) \exp(-\omega_0 \tau ) \text{ d}\tau\right|\]</span></p>
+<p><span class="math display">\[=\left|\alpha + \frac{2\beta}{T_0}\sin(w_hT_0/2)\left(\frac{1}{\omega_h-\omega_0}\exp(i(\omega_h-\omega_0)(t-T_0/2))  \;+ \frac{1}{\omega_h+\omega_0}\exp(-i(\omega_h+\omega_0)(t-T_0/2)) \right) \right|\]</span></p>
+<p>If <span class="math inline">\(\alpha&gt;&gt;\beta\)</span> (a factor 10 is more than enough), we can write</p>
+<p><span class="math display">\[ C_0(t) \approx |\alpha|\left| 1 + \frac{2\beta}{T_0\alpha}\sin(w_hT_0/2)\,\Re\left(\frac{\exp(i(\omega_h-\omega_0)(t-T_0/2)}{\omega_h-\omega_0} + \frac{\exp(-i(\omega_h+\omega_0)(t-T_0/2)}{\omega_h+\omega_0} \right) \right|\]</span></p>
+<p><span class="math display">\[ C_0(t) \approx \alpha\left( 1 + \frac{2\beta}{T_0\alpha}\sin(w_hT_0/2)\left(\frac{\cos((\omega_h-\omega_0)(t-T_0/2)}{\omega_h-\omega_0} + \frac{\cos((\omega_h+\omega_0)(t-T_0/2)}{\omega_h+\omega_0} \right) \right)\]</span></p>
+<p>Hence we can expect the mode 1 amplitude to be polluted by signals at frequencies <span class="math inline">\(|f_{hum} + f_0|\)</span> and <span class="math inline">\(|f_{hum} - f_0|\)</span>, the latter beging the strongest if the signal and hum frequencies are close.</p>
+<div class="figure">
+<img src="/img/Hum_FFT.png" alt="FFT of the amplitude ouput of a signal polluted by mains hum" />
+<p class="caption">FFT of the amplitude ouput of a signal polluted by mains hum</p>
+</div>
+<p>The above graph is an FFT of the amplitude output of our algorithm running at 44.1kHz, for a 70Hz signal of amplitude 1, polluted by a 50Hz hum of amplitude 0.1. The peaks are located at 20Hz and 120Hz, with a ratio of amplitude consistent with the above formula: <span class="math inline">\(117/722 \approx 1/6 \approx \frac{1/(70+50)}{1/(70-50)}\)</span>.</p>
+<p>A solution to this issue would be to apply a low-pass filter to the input signal, but since the mains frequency was close to our frequency of interest, the filter would not only induce both an unwanted phase shift and a reduction of amplitude.</p>
+<p>Moreover, the noise was actually a combination of a 50Hz sine wave and of higher order harmonics, making the low pass filtering ineffective. A comb filter was also considered, but the harmonics frequencies of the signal and the mains noise were too close.</p>
+<p>In the end, the practical solution was to thoroughly shield all high impedance cables and link all grounds with thick wires. This proved to be enough, as hum was inaudible in the sensor data.</p>
+<p>One could also apply the exact same algorithm to determine the mains amplitude and phase, and use the output of both estimators to get a clean signal, but this is beyond the scope of this study.</p>
+<h2 id="using-the-algorithm-to-study-the-timbre-of-musical-instruments">Using the algorithm to study the timbre of musical instruments</h2>
+<p>Having now an algorithm to study the change in amplitude of the different harmonics, we applied it to analyse the timbre of known instruments, such as the piano or the guitar.</p>
+<p>Below are the sound sample and the graph of the timbre of an A4 (440Hz) piano note at 44100Hz, recorded on a Steinway grand piano using a Neumann KM 84 microphone (courtesy of <a href="https://www.freesound.org/people/feelander/sounds/316004/">the University of Iowa Electronic Music Studio</a>).</p>
+<div class="figure">
+<img src="/img/decomp_timbre.png" alt="Output of the analysis algorithm on a A4 piano sample" />
+<p class="caption">Output of the analysis algorithm on a A4 piano sample</p>
+</div>
+<p>The graphs are consistent with the acoustic perception of the harmonics modulation and the output of regular FFTs : below is the output of the FFT produced by <a href="https://www.xivero.com/musicscope/">MusicScope</a>, with the sound sample.</p>
+<video controls>
+<source src="media/Piano.mf.A4_fft.mov" type="video/mov">
+<source src="media/Piano.mf.A4_fft.mp4" type="video/mp4">
+<source src="media/Piano.mf.A4_fft.webm" type="video/webm">
+</video>
+<h2 id="attempts-at-re-synthesis">Attempts at re-synthesis</h2>
+<p>Using the data collected using the algorithm on the piano sample, we smoothed the curves using a gaussian filter. We also limited the number of modes to five.</p>
+<p>The resulting smoothed amplitudes were used to modulate sine waves at the corresponding frequencies.</p>
+<p>Below is the FFT produced by MusicScope for the resynthesed sound :</p>
+<video controls>
+<source src="media/re_synthesis.mov" type="video/mov">
+<source src="media/re_synthesis.mp4" type="video/mp4">
+<source src="media/re_synthesis.webm" type="video/webm">
+</video>
+<p>Though the gaussian filtering and the low number of modes make the sound less bright, the piano timbre is still very recognizable.</p>
+<p>The fact that the timbre of the piano is recognizable even though the driving amplitudes are smoothed proved that if we could control the amplitude of each mode and make them follow a given trajectory, we would be able to approach existing timbres.</p>
+<p><strong>This experiment lead us to use the <span class="math inline">\(C_n(t)\)</span> as the basic components of our state vector, and it guided us in the choice of our musical control : we decided to make the system follow arbitrary modal amplitude trajectories.</strong></p>
+<p>The <a href="/dynamics">next section</a> tries to apply this idea to a simple model to get the dynamics of the system.</p>
+<h2 id="similar-algorithms">Similar algorithms</h2>
+<p>The family of Sliding DFTs regroups many algorithms that try to compute the Fourier coefficients of a signal, often with a certain knowledge of the target frequencies. A critical application was the <em>Dual-tone multi-frequency signaling</em> (DTMF) system that was a telephone communication standard until recently. Active research is conducted on this fields, as SDFT can be used as phase lock mechanisms (including in our case).</p>
+<p>A common algorithm used is the <em>Goertzel algorithm</em>@^goertzel1958algorithm that was refined many times to compensate for its marginal stability and its limitation to signals of frequencies that have a common divisor@^Chicharo1996 . Goertzel uses a second-order IIR filter followed by a first-order FIR filter to get to the Fourier coefficients, using only real-valued multiplications.</p>
+<p>Some variants of the SDFT try to solve its stability issue by adding a damping factor in the recursive loop@^douglas1997numerically ; but the marginal stability can also be bypassed by repositionning the poles of the filter on <code>1</code>, as the mSDFT@^Duda2010 and our algorithm do.</p>
+<h2 id="the-github-repo">The GitHub repo</h2>
+<p>All the tests described above are available on the GitHub repo of the project, in the</p>
+<p><code>/Fast_Fourier_Series_Coefficients</code> folder, in the <em>matlab</em> language.</p>
+<p>The C++ version of this algorithm is also available in the <em>Bela</em> scripts, in <code>/control</code>.</p>
